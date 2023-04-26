@@ -66,3 +66,93 @@ end
 test()
 end
 
+module GmshImport_test_2
+using Test
+using GmshImport
+using WriteVTK
+
+function test()
+    nodeblocks, elementblocks = gmsh_import("t5-tet-corner.msh")
+    @show length(nodeblocks)
+    @show length(elementblocks)
+
+    maxnnumber = 0
+    for b in nodeblocks
+        maxnnumber = max(maximum(b.ntags), maxnnumber)
+    end
+    x = fill(0.0, maxnnumber)
+    y = fill(0.0, maxnnumber)
+    z = fill(0.0, maxnnumber)
+    for b in nodeblocks
+        for k in eachindex(b.ntags)
+            j = b.ntags[k]
+            x[j] = b.ncoor[k, 1]
+            y[j] = b.ncoor[k, 2]
+            z[j] = b.ncoor[k, 3]
+        end
+    end
+
+    for b in elementblocks
+        @show b.edata
+        @test size(b.econn, 2) == GmshImport._elementtypes[b.elementtype][2]
+    end
+
+    for b in elementblocks
+        cells = [MeshCell(VTKCellTypes.VTK_QUADRATIC_TETRA, b.econn[k, [1, 2, 3, 4, 5, 6, 7, 8, 10, 9]]) for k in eachindex(b.etags)]
+
+        vtk_grid("$(@__MODULE__())-tetrahedra-$(b.block).vtu", x, y, z, cells) do vtk
+        # add datasets...
+        end
+    end
+
+    nothing
+end
+
+test()
+end
+
+module GmshImport_test_3
+using Test
+using GmshImport
+using WriteVTK
+
+function test()
+    nodeblocks, elementblocks = gmsh_import("t5-tet-corner-coarse.msh")
+    @show length(nodeblocks)
+    @show length(elementblocks)
+
+    maxnnumber = 0
+    for b in nodeblocks
+        maxnnumber = max(maximum(b.ntags), maxnnumber)
+    end
+    x = fill(0.0, maxnnumber)
+    y = fill(0.0, maxnnumber)
+    z = fill(0.0, maxnnumber)
+    for b in nodeblocks
+        for k in eachindex(b.ntags)
+            j = b.ntags[k]
+            x[j] = b.ncoor[k, 1]
+            y[j] = b.ncoor[k, 2]
+            z[j] = b.ncoor[k, 3]
+        end
+    end
+
+    for b in elementblocks
+        @show b.edata
+        @test size(b.econn, 2) == GmshImport._elementtypes[b.elementtype][2]
+    end
+
+    for b in elementblocks
+        cells = [MeshCell(VTKCellTypes.VTK_TETRA, b.econn[k, :]) for k in eachindex(b.etags)]
+
+        vtk_grid("$(@__MODULE__())-tetrahedra-$(b.block).vtu", x, y, z, cells) do vtk
+        # add datasets...
+        end
+    end
+
+    nothing
+end
+
+test()
+end
+
