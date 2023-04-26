@@ -1,0 +1,8 @@
+name = "GmshImport"
+uuid = "3fad61ad-f714-4a28-bb66-2c78145d2d59"
+authors = ["Petr Krysl <pkrysl@ucsd.edu>"]
+version = "0.1.0"
+
+[deps]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
