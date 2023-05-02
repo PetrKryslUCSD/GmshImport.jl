@@ -113,7 +113,7 @@ function gmsh_import(filename)
             if (length(temp) >= 9) && (uppercase(temp[1:9]) == "\$ENDNODES")
                 break
             else
-                error("Unexpected content, line $(current_line)")
+                error("Unexpected content, line $(reader._current)")
             end
         end
     end
@@ -160,7 +160,7 @@ function gmsh_import(filename)
             if (length(temp) >= 12) && (uppercase(temp[1:12]) == "\$ENDELEMENTS")
                 break
             else
-                error("Unexpected content, line $(current_line)")
+                error("Unexpected content, line $(reader._current)")
             end
         end
     end
