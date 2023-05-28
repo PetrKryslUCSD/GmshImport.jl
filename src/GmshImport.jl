@@ -2,6 +2,28 @@ module GmshImport
 
 export gmsh_import
 
+# key: name of element type, value: (element type number, number of nodes)a
+const elementtypes_definitions = Dict(
+    "LIN 2" => (1, 2),
+    "TRI 3" => (2, 3),
+    "QUA 4" => (3, 4),
+    "TET 4" => (4, 4),
+    "HEX 8" => (5, 8),
+    "PRI 6" => (6, 6),
+    "PYR 5" => (7, 5),
+    "LIN 3" => (8, 3),
+    "TRI 6" => (9, 6),
+    "QUA 9" => (10, 9),
+    "TET 10" => (11, 10),
+    "HEX 27" => (12, 27),
+    "PRI 18" => (13, 18),
+    "PYR 14" => (14, 14),
+    "PNT" => (15, 1),
+    "QUA 8" => (16, 8),
+    "HEX 20" => (17, 20),
+    "PRI 15" => (18, 15),
+    "PYR 13" => (19, 13),
+    )
 
 mutable struct _LineReader
     _lines
@@ -16,64 +38,47 @@ end
 
 """
     gmsh_import(filename,
-        elementtypes = Dict(
-            1 => ("LIN 2", 2),
-            2 => ("TRI 3", 3),
-            3 => ("QUA 4", 4),
-            4 => ("TET 4", 4),
-            5 => ("HEX 8", 8),
-            6 => ("PRI 6", 6),
-            7 => ("PYR 5", 5),
-            8 => ("LIN 3", 3),
-            9 => ("TRI 6", 6),
-            10 => ("QUA 9", 9),
-            11 => ("TET 10", 10),
-            12 => ("HEX 27", 27),
-            13 => ("PRI 18", 18),
-            14 => ("PYR 14", 14),
-            15 => ("PNT", 1),
-            16 => ("QUA 8", 8),
-            17 => ("HEX 20", 20),
-            )
+        process_elementtypes = String[],
+        add_elementtypes = Dict()
         )
 
 Import GMSH finite element mesh file.
 
 # Optional arguments
 
-- `elementtypes`: dictionary of element types we wish the import. Refer to
-  `https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format`. Only the elements
-  listed in this dictionary will be imported: all other element blocks will be
-  ignored.
-
-  The dictionary is indexed by `elementType` (integer). The value is a tuple of
-  a string label of the element type, and the number of nodes per element.
-  Example: Passing `Dict(2 => ("TRI 3", 3))` will enable the import of
-  triangles with three nodes only; all other element types will be ignored.
+- `process_elementtypes`: array of names of the element type derived from the
+  definitions in
+  `https://gitlab.onelab.info/gmsh/gmsh/blob/master/src/common/GmshDefines.h`.
+  To derive the name of the element type, take as an example `#define MSH_QUA_4
+  3`. Strip off `MSH_`, and replace the underscore with a space: "QUA 4". If
+  the array `process_elementtypes` is empty (which is the default), the
+  assumption is that all element types should be processed.
+- `add_elementtypes`: dictionary of additional element type definitions. Refer
+  to `https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format`. The dictionary
+  is indexed by the name of the element type (a string), and the value is a
+  tuple of the element type integer, and the number of nodes per element.
+  Example: Passing `Dict("TRI 15" => (23, 15),)` will add the type of triangles
+  with 15 nodes. The current defaults are `GmshImport.elementtypes_definitions`.
 """
 function gmsh_import(filename,
-    elementtypes = Dict(
-        1 => ("LIN 2", 2),
-        2 => ("TRI 3", 3),
-        3 => ("QUA 4", 4),
-        4 => ("TET 4", 4),
-        5 => ("HEX 8", 8),
-        6 => ("PRI 6", 6),
-        7 => ("PYR 5", 5),
-        8 => ("LIN 3", 3),
-        9 => ("TRI 6", 6),
-        10 => ("QUA 9", 9),
-        11 => ("TET 10", 10),
-        12 => ("HEX 27", 27),
-        13 => ("PRI 18", 18),
-        14 => ("PYR 14", 14),
-        15 => ("PNT", 1),
-        16 => ("QUA 8", 8),
-        17 => ("HEX 20", 20),
-        18 => ("PRI 15", 15),
-        19 => ("PYR 13", 13),
-        )
+    process_elementtypes = String[],
+    add_elementtypes = Dict()
     )
+    _elementtypes_definitions = merge(elementtypes_definitions, add_elementtypes)
+    if isempty(process_elementtypes)
+        elementtypes = Dict()
+        for (k, v) in _elementtypes_definitions
+            elementtypes[v[1]] = (k, v[2])
+        end
+    else
+        elementtypes = Dict()
+        for k in process_elementtypes
+            haskey(_elementtypes_definitions, k) || error("Name of element type not recognized ($(k))")
+            v = _elementtypes_definitions[k]
+            elementtypes[v[1]] = (k, v[2])
+        end
+    end
+
     reader = _LineReader(readlines(filename), 0)
     # Read the mesh format
     version = 0
