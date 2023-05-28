@@ -4,8 +4,6 @@ authors = ["Petr Krysl <pkrysl@ucsd.edu>"]
 version = "0.1.1"
 
 [deps]
-REPLHistory = "a5566ce3-012c-4b09-85b8-62131f0c3f36"
-Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 WriteVTK = "64499a7a-5c06-52f2-abe2-ccb03c286192"
 
