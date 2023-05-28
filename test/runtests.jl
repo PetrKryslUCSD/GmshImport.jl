@@ -348,3 +348,18 @@ end
 
 test()
 end
+
+
+module GmshImport_test_8
+using Test
+using GmshImport
+using WriteVTK
+
+function test()
+    @test_throws ErrorException nodeblocks, elementblocks = gmsh_import("t1-rect.msh", ["TET 5", "LIN 2", "TRI 3", ])
+
+    nothing
+end
+
+test()
+end
