@@ -2,39 +2,79 @@ module GmshImport
 
 export gmsh_import
 
-const _elementtypes = Dict(
-1 => ("LIN 2", 2),
-2 => ("TRI 3", 3),
-3 => ("QUA 4", 4),
-4 => ("TET 4", 4),
-5 => ("HEX 8", 8),
-6 => ("PRI 6", 6),
-7 => ("PYR 5", 5),
-8 => ("LIN 3", 3),
-9 => ("TRI 6", 6),
-10 => ("QUA 9", 9),
-11 => ("TET 10", 10),
-12 => ("HEX 27", 27),
-13 => ("PRI 18", 18),
-14 => ("PYR 14", 14),
-15 => ("PNT", 1),
-16 => ("QUA 8", 8),
-17 => ("HEX 20", 20),
-)
 
-mutable struct LineReader
+mutable struct _LineReader
     _lines
     _current
 end
 
-function (b::LineReader)()
+function (b::_LineReader)()
     b._current = b._current + 1
     b._current > length(b._lines) && error("Ran out of lines: reading beyond the end of the file?")
     b._lines[b._current]
 end
 
-function gmsh_import(filename)
-    reader = LineReader(readlines(filename), 0)
+"""
+    gmsh_import(filename,
+        elementtypes = Dict(
+            1 => ("LIN 2", 2),
+            2 => ("TRI 3", 3),
+            3 => ("QUA 4", 4),
+            4 => ("TET 4", 4),
+            5 => ("HEX 8", 8),
+            6 => ("PRI 6", 6),
+            7 => ("PYR 5", 5),
+            8 => ("LIN 3", 3),
+            9 => ("TRI 6", 6),
+            10 => ("QUA 9", 9),
+            11 => ("TET 10", 10),
+            12 => ("HEX 27", 27),
+            13 => ("PRI 18", 18),
+            14 => ("PYR 14", 14),
+            15 => ("PNT", 1),
+            16 => ("QUA 8", 8),
+            17 => ("HEX 20", 20),
+            )
+        )
+
+Import GMSH finite element mesh file.
+
+# Optional arguments
+
+- `elementtypes`: dictionary of element types we wish the import. Refer to
+  `https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format`. Only the elements
+  listed in this dictionary will be imported: all other element blocks will be
+  ignored.
+
+  The dictionary is indexed by `elementType` (integer). The value is a tuple of
+  a string label of the element type, and the number of nodes per element.
+  Example: Passing `Dict(2 => ("TRI 3", 3))` will enable the import of
+  triangles with three nodes only; all other element types will be ignored.
+"""
+function gmsh_import(filename,
+    elementtypes = Dict(
+        1 => ("LIN 2", 2),
+        2 => ("TRI 3", 3),
+        3 => ("QUA 4", 4),
+        4 => ("TET 4", 4),
+        5 => ("HEX 8", 8),
+        6 => ("PRI 6", 6),
+        7 => ("PYR 5", 5),
+        8 => ("LIN 3", 3),
+        9 => ("TRI 6", 6),
+        10 => ("QUA 9", 9),
+        11 => ("TET 10", 10),
+        12 => ("HEX 27", 27),
+        13 => ("PRI 18", 18),
+        14 => ("PYR 14", 14),
+        15 => ("PNT", 1),
+        16 => ("QUA 8", 8),
+        17 => ("HEX 20", 20),
+        18 => ("PRI 15", 15),
+        19 => ("PYR 13", 13),
+        )
+    )
+    reader = _LineReader(readlines(filename), 0)
     # Read the mesh format
     version = 0
     filetype = -1
@@ -143,16 +183,24 @@ function gmsh_import(filename)
                     enttag = parse(Int, A[2])
                     elementtype = parse(Int, A[3])
                     nelements = parse(Int, A[4])
-                    edata = _elementtypes[elementtype]
-                    etags = fill(0, nelements)
-                    econn = fill(0, nelements, edata[2])
+                    edata = ("", 0)
+                    knowntype =  haskey(elementtypes, elementtype)
+                    if knowntype
+                        edata = elementtypes[elementtype]
+                        etags = fill(0, nelements)
+                        econn = fill(0, nelements, edata[2])
+                    end
                     for i in 1:nelements
                         temp = reader()
-                        A = split(replace(temp, "," => " "))
-                        etags[i] = parse(Int, A[1])
-                        econn[i, :] .= [parse(Int, A[k+1]) for k in eachindex(A[2:size(econn, 2)+1])]
+                        if knowntype
+                            A = split(replace(temp, "," => " "))
+                            etags[i] = parse(Int, A[1])
+                            econn[i, :] .= [parse(Int, A[k+1]) for k in eachindex(A[2:size(econn, 2)+1])]
+                        end
                     end
-                    push!(elementblocks, (block = block, entdim = entdim, enttag = enttag, elementtype = elementtype, edata = edata, nelements = nelements, etags = etags, econn = econn))
+                    if knowntype
+                        push!(elementblocks, (block = block, entdim = entdim, enttag = enttag, elementtype = elementtype, edata = edata, nelements = nelements, etags = etags, econn = econn))
+                    end
                 end
                 level = 1
             end
