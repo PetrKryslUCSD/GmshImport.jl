@@ -26,3 +26,9 @@ Element blocks is an array of named tuples, each with the data:
 - `nelements` = number of elements located on this entity, 
 - `etags` = array of element tags, 
 - `econn` = array of element connectivities, one element per row.
+
+It is also possible to request only certain element types to be imported. For
+instance the following code imports only triangles:
+```
+nodeblocks, elementblocks = gmsh_import("t1-rect.msh", Dict(2 => ("TRI 3", 3),))
+```
