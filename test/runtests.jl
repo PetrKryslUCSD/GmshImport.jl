@@ -5,6 +5,7 @@ using WriteVTK
 
 function test()
     nodeblocks, elementblocks = gmsh_import("t1-rect.msh")
+    # @show elementblocks
     b = nodeblocks[1]
     @test (b.block, b.nnodes) == (1, 1)
     b = nodeblocks[2]
