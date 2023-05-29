@@ -77,7 +77,7 @@ Import GMSH finite element mesh file.
     + `block` = block id,
     + `entdim` = entity dimension,
     + `enttag` = entity tag,
-    + `elementname` = name of the element type,
+    + `elementtypename` = name of the element type,
     + `elementtype` = numerical element type (as defined by Gmsh),
     + `nnodes` = number of nodes per element,
     + `nelements` = number of elements located on this entity,
@@ -228,7 +228,7 @@ function gmsh_import(filename,
                         end
                     end
                     if knowntype
-                        push!(elementblocks, (block = block, entdim = entdim, enttag = enttag, elementname = edata[1], elementtype = elementtype, nnodes = edata[2], nelements = nelements, etags = etags, econn = econn))
+                        push!(elementblocks, (block = block, entdim = entdim, enttag = enttag, elementtypename = edata[1], elementtype = elementtype, nnodes = edata[2], nelements = nelements, etags = etags, econn = econn))
                     end
                 end
                 level = 1
